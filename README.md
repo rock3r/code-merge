@@ -1,4 +1,4 @@
-# code-merge
+# code-merge ![CI status](https://github.com/rock3r/code-merge/workflows/Check%20with%20Gradle/badge.svg)
 A tool to simplify merging code changes from a separate codebase.
 
 The tool naïvely traverses an input folder and tries to find the same files (based on matching FQNs) in a different
