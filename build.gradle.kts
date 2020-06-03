@@ -28,6 +28,7 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
+    implementation("com.github.ajalt:clikt:2.7.1")
 }
 
 val detektVersion = "1.9.1"
