@@ -17,15 +17,15 @@ suspend fun CliCommand.collectSourceFilesIn(directory: File): Set<SourceFileInfo
 
     require(allFilesCount >= 0) { "The source directory must contain at least one file" }
 
-    val sourceFiles = withContext(Dispatchers.IO) {
+    val parsedFiles = withContext(Dispatchers.IO) {
         allFiles.filter { SourceFileInfo.SourceLanguage.detectLanguageFor(it) != null }
-            .parallelMapNotNull { file ->
+            .parallelMap { file ->
                 val fileContents = file.readText()
                 val language = (SourceFileInfo.SourceLanguage.detectLanguageFor(file)
                     ?: throw IllegalStateException("File ${file.absolutePath} not supported"))
 
                 val fullyQualifiedName = extractFqnFrom(fileContents, file, language, env.logger)
-                    ?: return@parallelMapNotNull null
+                    ?: return@parallelMap null
 
                 SourceFileInfo(
                     file = file,
@@ -35,11 +35,18 @@ suspend fun CliCommand.collectSourceFilesIn(directory: File): Set<SourceFileInfo
                 )
             }
     }
-    val sourceFilesCount = sourceFiles.count()
-    env.logger.i("The reference folder contains $sourceFilesCount source files")
+    val totalCount = parsedFiles.count()
+    val parsedSourceFiles = parsedFiles.filterNotNull()
+    val sourceFilesCount = parsedSourceFiles.count()
     require(sourceFilesCount >= 0) { "The source directory must contain at least one source file" }
 
-    return@coroutineScope sourceFiles.toSet()
+    env.logger.i("The reference folder contains $sourceFilesCount source files")
+
+    if (totalCount > sourceFilesCount) {
+        env.logger.w("${totalCount - sourceFilesCount} file(s) could not be parsed as they may contain errors")
+    }
+
+    return@coroutineScope parsedSourceFiles.toSet()
 }
 
 fun extractFqnFrom(fileContents: String, file: File, language: SourceFileInfo.SourceLanguage, logger: Logger): String? =
@@ -51,6 +58,6 @@ fun extractFqnFrom(fileContents: String, file: File, language: SourceFileInfo.So
 private fun calculateHashFor(fileContents: String): ByteArray = MessageDigest.getInstance("SHA-1")
     .digest(fileContents.toByteArray())
 
-private suspend inline fun <T, R : Any> Iterable<T>.parallelMapNotNull(crossinline f: (T) -> R?): List<R> = coroutineScope {
-    map { async { f(it) } }.awaitAll().filterNotNull()
+private suspend inline fun <T, R : Any?> Iterable<T>.parallelMap(crossinline f: (T) -> R): List<R> = coroutineScope {
+    map { async { f(it) } }.awaitAll()
 }

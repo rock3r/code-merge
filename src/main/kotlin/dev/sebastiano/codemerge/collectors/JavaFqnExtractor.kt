@@ -11,7 +11,11 @@ fun extractFqnFromJavaSources(sources: String, file: File, logger: Logger): Stri
     val parsedCode = try {
         StaticJavaParser.parse(sources)
     } catch (e: ParseProblemException) {
-        logger.w("Unable to parse Java sources from file $file. ${e.message}")
+        if (logger.isVerbose) {
+            logger.v("Unable to parse Java sources from file $file. Problems:\n${e.problemsString()}")
+        } else {
+            logger.w("Unable to parse Java sources from file $file.")
+        }
         return null
     }
 
@@ -20,6 +24,10 @@ fun extractFqnFromJavaSources(sources: String, file: File, logger: Logger): Stri
 
     val filePackageName = extractPackageNameFrom(parsedCode) ?: return null
     return "$filePackageName.${fileNameWithoutExtension}Java"
+}
+
+private fun ParseProblemException.problemsString() = problems.joinToString(separator = "\n") { problem ->
+    " * ${problem.verboseMessage}"
 }
 
 private fun extractPrimaryClassFqnFrom(sources: CompilationUnit, fileNameWithoutExtension: String): String? =

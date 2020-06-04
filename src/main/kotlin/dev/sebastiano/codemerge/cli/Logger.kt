@@ -2,12 +2,17 @@ package dev.sebastiano.codemerge.cli
 
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeFormatterBuilder
+import java.time.temporal.ChronoField
+import java.util.Locale
 
 interface Logger {
     fun e(msg: String)
     fun w(msg: String)
     fun i(msg: String)
     fun v(msg: String)
+
+    val isVerbose: Boolean
 }
 
 fun createLogger(
@@ -19,12 +24,27 @@ fun createLogger(
 
 private class DelegatingLogger(
     private val name: String,
-    private val verbose: Boolean,
+    override val isVerbose: Boolean,
     private val infoLogger: (String) -> Unit,
     private val errorLogger: (String) -> Unit
 ) : Logger {
 
-    private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    private val timeFormatter: DateTimeFormatter = DateTimeFormatterBuilder()
+        .parseCaseInsensitive()
+        .append(DateTimeFormatter.ISO_LOCAL_DATE)
+        .appendLiteral(' ')
+        .append(
+            DateTimeFormatterBuilder()
+                .appendValue(ChronoField.HOUR_OF_DAY, 2)
+                .appendLiteral(':')
+                .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+                .optionalStart()
+                .appendLiteral(':')
+                .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+                .optionalStart()
+                .appendFraction(ChronoField.NANO_OF_SECOND, 3, 3, true)
+                .toFormatter(Locale.ROOT))
+        .toFormatter(Locale.ROOT)
 
     override fun e(msg: String) {
         errorLogger(formatMessage("ERROR", msg))
@@ -39,7 +59,7 @@ private class DelegatingLogger(
     }
 
     override fun v(msg: String) {
-        if (verbose) infoLogger(formatMessage("VERBOSE", msg))
+        if (isVerbose) infoLogger(formatMessage("VERBOSE", msg))
     }
 
     private val timestampPad = 20
