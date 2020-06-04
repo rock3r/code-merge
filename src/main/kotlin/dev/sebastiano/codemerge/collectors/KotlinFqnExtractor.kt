@@ -1,5 +1,6 @@
 package dev.sebastiano.codemerge.collectors
 
+import java.util.Locale
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.messages.MessageRenderer.PLAIN_RELATIVE_PATHS
 import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
@@ -16,7 +17,6 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtValueArgumentList
 import org.jetbrains.kotlin.psi.psiUtil.getCallNameExpression
 import org.jetbrains.kotlin.psi.psiUtil.isPrivate
-import java.util.Locale
 
 private val project by lazy {
     KotlinCoreEnvironment.createForProduction(

@@ -6,8 +6,8 @@ import com.github.ajalt.clikt.parameters.options.defaultLazy
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import dev.sebastiano.codemerge.collectors.collectReferenceSourceFiles
-import kotlinx.coroutines.runBlocking
 import java.io.File
+import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) = Main().main(args)
 

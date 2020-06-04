@@ -1,13 +1,13 @@
 package dev.sebastiano.codemerge.collectors
 
 import dev.sebastiano.codemerge.cli.CliCommand
+import java.io.File
+import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.security.MessageDigest
 
 suspend fun CliCommand.collectReferenceSourceFiles(directory: File): Set<SourceFileInfo> = coroutineScope {
     val allFiles = withContext(Dispatchers.IO) { directory.walkTopDown().filter { it.isFile }.toList() }
