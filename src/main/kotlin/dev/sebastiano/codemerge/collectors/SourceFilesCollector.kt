@@ -1,6 +1,7 @@
 package dev.sebastiano.codemerge.collectors
 
 import dev.sebastiano.codemerge.cli.CliCommand
+import dev.sebastiano.codemerge.cli.Logger
 import java.io.File
 import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
@@ -9,7 +10,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
-suspend fun CliCommand.collectReferenceSourceFiles(directory: File): Set<SourceFileInfo> = coroutineScope {
+suspend fun CliCommand.collectSourceFilesIn(directory: File): Set<SourceFileInfo> = coroutineScope {
     val allFiles = withContext(Dispatchers.IO) { directory.walkTopDown().filter { it.isFile }.toList() }
     val allFilesCount = allFiles.count()
     env.logger.v("The reference folder contains $allFilesCount files")
@@ -18,14 +19,17 @@ suspend fun CliCommand.collectReferenceSourceFiles(directory: File): Set<SourceF
 
     val sourceFiles = withContext(Dispatchers.IO) {
         allFiles.filter { SourceFileInfo.SourceLanguage.detectLanguageFor(it) != null }
-            .pmap { file ->
+            .parallelMapNotNull { file ->
                 val fileContents = file.readText()
                 val language = (SourceFileInfo.SourceLanguage.detectLanguageFor(file)
                     ?: throw IllegalStateException("File ${file.absolutePath} not supported"))
 
+                val fullyQualifiedName = extractFqnFrom(fileContents, file, language, env.logger)
+                    ?: return@parallelMapNotNull null
+
                 SourceFileInfo(
                     file = file,
-                    fullyQualifiedName = extractFqnFrom(fileContents, file.nameWithoutExtension, language),
+                    fullyQualifiedName = fullyQualifiedName,
                     language = language,
                     sha1 = calculateHashFor(fileContents)
                 )
@@ -38,15 +42,15 @@ suspend fun CliCommand.collectReferenceSourceFiles(directory: File): Set<SourceF
     return@coroutineScope sourceFiles.toSet()
 }
 
-fun extractFqnFrom(fileContents: String, fileName: String, language: SourceFileInfo.SourceLanguage): String = when (language) {
-    SourceFileInfo.SourceLanguage.JAVA -> extractFqnFromJavaSources(fileContents, fileName)
-    SourceFileInfo.SourceLanguage.KOTLIN -> extractFqnFromKotlinSources(fileContents, fileName)
-}
+fun extractFqnFrom(fileContents: String, file: File, language: SourceFileInfo.SourceLanguage, logger: Logger): String? =
+    when (language) {
+        SourceFileInfo.SourceLanguage.JAVA -> extractFqnFromJavaSources(fileContents, file, logger)
+        SourceFileInfo.SourceLanguage.KOTLIN -> extractFqnFromKotlinSources(fileContents, file, logger)
+    }
 
-private val sha1Digest = MessageDigest.getInstance("SHA-1")
+private fun calculateHashFor(fileContents: String): ByteArray = MessageDigest.getInstance("SHA-1")
+    .digest(fileContents.toByteArray())
 
-private fun calculateHashFor(fileContents: String): ByteArray = sha1Digest.digest(fileContents.toByteArray())
-
-private suspend fun <A, B> Iterable<A>.pmap(f: suspend (A) -> B): List<B> = coroutineScope {
-    map { async { f(it) } }.awaitAll()
+private suspend inline fun <T, R : Any> Iterable<T>.parallelMapNotNull(crossinline f: (T) -> R?): List<R> = coroutineScope {
+    map { async { f(it) } }.awaitAll().filterNotNull()
 }

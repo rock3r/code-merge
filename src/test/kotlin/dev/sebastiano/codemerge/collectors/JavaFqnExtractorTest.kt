@@ -2,19 +2,14 @@ package dev.sebastiano.codemerge.collectors
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import assertk.assertions.isFailure
-import assertk.assertions.isInstanceOf
+import dev.sebastiano.codemerge.cli.Logger
+import java.io.File
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.mock
 
 @Suppress("ClassNameDiffersFromFileName")
 internal class JavaFqnExtractorTest {
-
-    @Test
-    internal fun `should throw IllegalArgumentException if the file name contains the java extension`() {
-        assertThat { extractFqnFromJavaSources("anything goes here", "Banana.java") }.isFailure()
-            .isInstanceOf(IllegalArgumentException::class)
-    }
 
     @Test
     internal fun `should use the name of the class matching the file name, if any`() {
@@ -32,7 +27,7 @@ internal class JavaFqnExtractorTest {
             class Potato implements Serializable {}
         """.trimIndent()
 
-        val fqn = extractFqnFromJavaSources(sources, "Banana")
+        val fqn = extractFqn(sources, "Banana")
         assertThat(fqn).isEqualTo("com.example.test.Banana")
     }
 
@@ -44,7 +39,13 @@ internal class JavaFqnExtractorTest {
             class Potato implements Serializable {}
         """.trimIndent()
 
-        val fqn = extractFqnFromJavaSources(sources, "Banana")
+        val fqn = extractFqn(sources, "Banana")
         assertThat(fqn).isEqualTo("com.example.test.BananaJava")
     }
+
+    private fun extractFqn(fileContents: String, fileName: String) = extractFqnFromJavaSources(
+        sources = fileContents,
+        file = File(fileName),
+        logger = mock(Logger::class.java)
+    )
 }

@@ -1,9 +1,9 @@
 package dev.sebastiano.codemerge.collectors
 
-import java.util.Locale
+import dev.sebastiano.codemerge.cli.Logger
+import java.io.File
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
-import org.jetbrains.kotlin.cli.common.messages.MessageRenderer.PLAIN_RELATIVE_PATHS
-import org.jetbrains.kotlin.cli.common.messages.PrintingMessageCollector
+import org.jetbrains.kotlin.cli.common.messages.MessageCollector
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.com.intellij.openapi.util.Disposer
@@ -24,17 +24,17 @@ private val project by lazy {
         CompilerConfiguration().apply {
             put(
                 CLIConfigurationKeys.MESSAGE_COLLECTOR_KEY,
-                PrintingMessageCollector(System.err, PLAIN_RELATIVE_PATHS, false)
+                MessageCollector.NONE
             )
         },
         EnvironmentConfigFiles.JVM_CONFIG_FILES
     ).project
 }
 
-fun extractFqnFromKotlinSources(sources: String, fileNameWithoutExtension: String): String {
-    require(!fileNameWithoutExtension.toLowerCase(Locale.ROOT).endsWith(".kt")) { "The file name must not contain the extension" }
+fun extractFqnFromKotlinSources(sources: String, file: File, logger: Logger): String? {
+    val fileNameWithoutExtension = file.nameWithoutExtension
+    val ktFile = createKtFile(sources, file, logger) ?: return null
 
-    val ktFile = createKtFile(sources, fileNameWithoutExtension)
     val primaryClass = ktFile.declarations.filterIsInstance<KtClass>()
         .find { it.name == fileNameWithoutExtension && !it.isPrivate() }
     if (primaryClass?.fqName != null) return primaryClass.fqName!!.asString()
@@ -48,6 +48,10 @@ fun extractFqnFromKotlinSources(sources: String, fileNameWithoutExtension: Strin
     return "${ktFile.packageFqName.asString()}.$className"
 }
 
-private fun createKtFile(codeString: String, fileName: String) =
+private fun createKtFile(codeString: String, file: File, logger: Logger) = try {
     PsiManager.getInstance(project)
-        .findFile(LightVirtualFile(fileName, KotlinFileType.INSTANCE, codeString)) as KtFile
+        .findFile(LightVirtualFile(file.nameWithoutExtension, KotlinFileType.INSTANCE, codeString)) as KtFile
+} catch (e: ClassCastException) {
+    logger.w("Unable to parse Kotlin sources from file $file")
+    null
+}

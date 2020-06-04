@@ -3,24 +3,42 @@ package dev.sebastiano.codemerge.cli
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
-class Logger(
+interface Logger {
+    fun e(msg: String)
+    fun w(msg: String)
+    fun i(msg: String)
+    fun v(msg: String)
+}
+
+fun createLogger(
+    name: String,
+    verbose: Boolean,
+    infoLogger: (String) -> Unit,
+    errorLogger: (String) -> Unit = infoLogger
+): Logger = DelegatingLogger(name, verbose, infoLogger, errorLogger)
+
+private class DelegatingLogger(
     private val name: String,
     private val verbose: Boolean,
     private val infoLogger: (String) -> Unit,
-    private val errorLogger: (String) -> Unit = infoLogger
-) {
+    private val errorLogger: (String) -> Unit
+) : Logger {
 
     private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
-    fun i(msg: String) {
-        infoLogger(formatMessage("INFO", msg))
-    }
-
-    fun w(msg: String) {
+    override fun e(msg: String) {
         errorLogger(formatMessage("ERROR", msg))
     }
 
-    fun v(msg: String) {
+    override fun w(msg: String) {
+        infoLogger(formatMessage("WARN", msg))
+    }
+
+    override fun i(msg: String) {
+        infoLogger(formatMessage("INFO", msg))
+    }
+
+    override fun v(msg: String) {
         if (verbose) infoLogger(formatMessage("VERBOSE", msg))
     }
 

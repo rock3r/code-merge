@@ -25,7 +25,7 @@ abstract class CliCommand(help: String = "") : CliktCommand(help = help, printHe
     override fun run() {
         runtimeEnv = RuntimeEnv(
             verbose = verbose,
-            logger = Logger(
+            logger = createLogger(
                 name = "dev.sebastiano.codemerge",
                 verbose = verbose,
                 infoLogger = { echo(it, err = false) },

@@ -5,7 +5,7 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.defaultLazy
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
-import dev.sebastiano.codemerge.collectors.collectReferenceSourceFiles
+import dev.sebastiano.codemerge.collectors.collectSourceFilesIn
 import java.io.File
 import kotlinx.coroutines.runBlocking
 
@@ -31,11 +31,12 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
 
     override fun run() = runBlocking {
         super.run()
-        echo("Reading source files from '${referenceDir.absolutePath}'...")
-        val sourceFiles = collectReferenceSourceFiles(referenceDir)
-        echo("Source files collected:")
-        sourceFiles.forEach {
-            echo(it)
-        }
+        env.logger.i("Indexing source files in '${referenceDir.absolutePath}'...")
+        val sourceFiles = collectSourceFilesIn(referenceDir)
+        env.logger.i("Source files indexed.")
+
+        env.logger.i("Indexing files to check for changes in '${searchDir.absolutePath}'...")
+        val filesToSearchIn = collectSourceFilesIn(searchDir)
+        env.logger.i("Files to check indexed.")
     }
 }

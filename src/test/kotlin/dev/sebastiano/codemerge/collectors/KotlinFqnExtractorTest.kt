@@ -2,18 +2,13 @@ package dev.sebastiano.codemerge.collectors
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import assertk.assertions.isFailure
-import assertk.assertions.isInstanceOf
+import dev.sebastiano.codemerge.cli.Logger
+import java.io.File
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito
 
 internal class KotlinFqnExtractorTest {
-
-    @Test
-    internal fun `should throw IllegalArgumentException if the file name contains the kt extension`() {
-        assertThat { extractFqnFromKotlinSources("anything goes here", "Banana.kt") }.isFailure()
-            .isInstanceOf(IllegalArgumentException::class)
-    }
 
     @Test
     internal fun `should use the name of the class matching the file name, if any`() {
@@ -30,7 +25,7 @@ internal class KotlinFqnExtractorTest {
             internal class Potato: Serializable
         """.trimIndent()
 
-        val fqn = extractFqnFromKotlinSources(sources, "Banana")
+        val fqn = extractFqn(sources, "Banana")
         assertThat(fqn).isEqualTo("com.example.test.Banana")
     }
 
@@ -43,7 +38,7 @@ internal class KotlinFqnExtractorTest {
             fun ignoreThis() = TODO()
         """.trimIndent()
 
-        val fqn = extractFqnFromKotlinSources(sources, "Banana")
+        val fqn = extractFqn(sources, "Banana")
         assertThat(fqn).isEqualTo("com.example.test.BananaAnnotation")
     }
 
@@ -58,7 +53,7 @@ internal class KotlinFqnExtractorTest {
             private data class Banana(val variety: String = "Cavendish")
         """.trimIndent()
 
-        val fqn = extractFqnFromKotlinSources(sources, "Banana")
+        val fqn = extractFqn(sources, "Banana")
         assertThat(fqn).isEqualTo("com.example.test.BananaAnnotation")
     }
 
@@ -70,7 +65,7 @@ internal class KotlinFqnExtractorTest {
             fun ignoreThis() = TODO()
         """.trimIndent()
 
-        val fqn = extractFqnFromKotlinSources(sources, "Banana")
+        val fqn = extractFqn(sources, "Banana")
         assertThat(fqn).isEqualTo("com.example.test.BananaKt")
     }
 
@@ -84,7 +79,13 @@ internal class KotlinFqnExtractorTest {
             private data class Banana(val variety: String = "Cavendish")
         """.trimIndent()
 
-        val fqn = extractFqnFromKotlinSources(sources, "Banana")
+        val fqn = extractFqn(sources, "Banana")
         assertThat(fqn).isEqualTo("com.example.test.BananaKt")
     }
+
+    private fun extractFqn(fileContents: String, fileName: String) = extractFqnFromKotlinSources(
+        sources = fileContents,
+        file = File(fileName),
+        logger = Mockito.mock(Logger::class.java)
+    )
 }

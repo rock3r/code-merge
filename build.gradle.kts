@@ -41,6 +41,7 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
     testImplementation("com.willowtreeapps.assertk:assertk:0.22")
+    testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
 
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion")
 }

@@ -1,15 +1,25 @@
 package dev.sebastiano.codemerge.collectors
 
+import com.github.javaparser.ParseProblemException
 import com.github.javaparser.StaticJavaParser
 import com.github.javaparser.ast.CompilationUnit
-import java.util.Locale
+import dev.sebastiano.codemerge.cli.Logger
+import java.io.File
 
-fun extractFqnFromJavaSources(sources: String, fileNameWithoutExtension: String): String {
-    require(!fileNameWithoutExtension.toLowerCase(Locale.ROOT).endsWith(".java")) { "The file name must not contain the extension" }
-    val parsedCode = StaticJavaParser.parse(sources)
+fun extractFqnFromJavaSources(sources: String, file: File, logger: Logger): String? {
+    val fileNameWithoutExtension = file.nameWithoutExtension
+    val parsedCode = try {
+        StaticJavaParser.parse(sources)
+    } catch (e: ParseProblemException) {
+        logger.w("Unable to parse Java sources from file $file. ${e.message}")
+        return null
+    }
 
-    return extractPrimaryClassFqnFrom(parsedCode, fileNameWithoutExtension)
-        ?: "${extractPackageNameFrom(parsedCode)}.${fileNameWithoutExtension}Java"
+    val primaryClassFqn = extractPrimaryClassFqnFrom(parsedCode, fileNameWithoutExtension)
+    if (primaryClassFqn != null) return primaryClassFqn
+
+    val filePackageName = extractPackageNameFrom(parsedCode) ?: return null
+    return "$filePackageName.${fileNameWithoutExtension}Java"
 }
 
 private fun extractPrimaryClassFqnFrom(sources: CompilationUnit, fileNameWithoutExtension: String): String? =
@@ -18,5 +28,5 @@ private fun extractPrimaryClassFqnFrom(sources: CompilationUnit, fileNameWithout
         .firstOrNull()
         ?.fullyQualifiedName?.orElse(null)
 
-private fun extractPackageNameFrom(sources: CompilationUnit): String =
-    sources.packageDeclaration.get().nameAsString
+private fun extractPackageNameFrom(sources: CompilationUnit): String? =
+    sources.packageDeclaration.orElse(null)?.nameAsString
