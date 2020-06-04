@@ -2,6 +2,7 @@ package dev.sebastiano.codemerge.cli
 
 import com.github.ajalt.clikt.core.context
 import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.options.defaultLazy
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
@@ -23,6 +24,11 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
     private val searchDir by argument(help = "Directory to look for changes in", name = "searchDir")
         .file(mustExist = true, canBeDir = true, canBeFile = false, canBeSymlink = false, mustBeReadable = true)
 
+    private val excludePattern by option(
+        help = "Regular expression to exclude files based on their full paths",
+        names = *arrayOf("--exclude", "-e")
+    ).convert { it.toRegex() }
+
     init {
         context {
             helpOptionNames = setOf("-h", "--help", "-?")
@@ -32,11 +38,11 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
     override fun run() = runBlocking {
         super.run()
         env.logger.i("Indexing source files in '${referenceDir.absolutePath}'...")
-        val sourceFiles = collectSourceFilesIn(referenceDir)
+        val sourceFiles = collectSourceFilesIn(referenceDir, excludePattern)
         env.logger.i("Source files indexed.")
 
         env.logger.i("Indexing files to check for changes in '${searchDir.absolutePath}'...")
-        val filesToSearchIn = collectSourceFilesIn(searchDir)
+        val filesToSearchIn = collectSourceFilesIn(searchDir, excludePattern)
         env.logger.i("Files to check indexed.")
     }
 }
