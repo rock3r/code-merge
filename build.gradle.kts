@@ -31,6 +31,7 @@ repositories {
     jcenter()
 }
 
+val detektVersion = "1.9.1"
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("compiler-embeddable"))
@@ -43,8 +44,6 @@ dependencies {
 
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:$detektVersion")
 }
-
-val detektVersion = "1.9.1"
 detekt {
     toolVersion = detektVersion
     autoCorrect = !isCi()
