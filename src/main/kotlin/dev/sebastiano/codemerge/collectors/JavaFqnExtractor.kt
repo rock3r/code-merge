@@ -11,11 +11,7 @@ fun extractFqnFromJavaSources(sources: String, file: File, logger: Logger): Stri
     val parsedCode = try {
         StaticJavaParser.parse(sources)
     } catch (e: ParseProblemException) {
-        if (logger.isVerbose) {
-            logger.v("Unable to parse Java sources from file $file. Problems:\n${e.problemsString()}")
-        } else {
-            logger.w("Unable to parse Java sources from file $file.")
-        }
+        logger.v("Unable to parse Java sources from file $file. Problems:\n${e.problemsString()}")
         return null
     }
 

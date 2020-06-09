@@ -52,6 +52,6 @@ private fun createKtFile(codeString: String, file: File, logger: Logger) = try {
     PsiManager.getInstance(project)
         .findFile(LightVirtualFile(file.nameWithoutExtension, KotlinFileType.INSTANCE, codeString)) as KtFile
 } catch (e: ClassCastException) {
-    logger.w("Unable to parse Kotlin sources from file $file")
+    logger.v("Unable to parse Kotlin sources from file $file")
     null
 }
