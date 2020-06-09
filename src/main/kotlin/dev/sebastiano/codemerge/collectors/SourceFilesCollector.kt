@@ -2,11 +2,10 @@ package dev.sebastiano.codemerge.collectors
 
 import dev.sebastiano.codemerge.cli.CliCommand
 import dev.sebastiano.codemerge.cli.Logger
+import dev.sebastiano.codemerge.util.parallelMap
 import java.io.File
 import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
@@ -67,7 +66,3 @@ fun extractFqnFrom(fileContents: String, file: File, language: SourceFileInfo.So
 
 private fun calculateHashFor(fileContents: String): ByteArray = MessageDigest.getInstance("SHA-1")
     .digest(fileContents.toByteArray())
-
-private suspend inline fun <T, R : Any?> Iterable<T>.parallelMap(crossinline f: (T) -> R): List<R> = coroutineScope {
-    map { async { f(it) } }.awaitAll()
-}

@@ -6,7 +6,7 @@ import dev.sebastiano.codemerge.collectors.SourceFileInfo
 import java.lang.UnsupportedOperationException
 
 fun calculateCodeDiff(referenceFilesSet: Set<SourceFileInfo>, comparisonFilesSet: Set<SourceFileInfo>) : CodeDiffResults {
-    val modified = mutableSetOf<SourceFileInfo>()
+    val modified = mutableSetOf<CodeDiffResults.ModifiedFileInfo>()
     val added = mutableSetOf<SourceFileInfo>()
     val removed = mutableSetOf<SourceFileInfo>()
 
@@ -34,7 +34,7 @@ fun calculateCodeDiff(referenceFilesSet: Set<SourceFileInfo>, comparisonFilesSet
     }, false).dispatchUpdatesTo(object : ListUpdateCallback {
         override fun onChanged(position: Int, count: Int, payload: Any?) {
             for (i in position until position + count) {
-                modified += referenceFiles[i]
+                modified += CodeDiffResults.ModifiedFileInfo(referenceFiles[i], comparisonFiles[i])
                 allChanged += referenceFiles[i]
             }
         }

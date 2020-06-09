@@ -5,11 +5,18 @@ import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.options.defaultLazy
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.validate
 import com.github.ajalt.clikt.parameters.types.file
 import dev.sebastiano.codemerge.collectors.collectSourceFilesIn
 import dev.sebastiano.codemerge.diff.calculateCodeDiff
+import dev.sebastiano.codemerge.diff.excludeUnrelatedAdditions
+import dev.sebastiano.codemerge.io.copyFilesInPackageDir
+import dev.sebastiano.codemerge.io.copyModifiedFiles
+import dev.sebastiano.codemerge.io.deleteFiles
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.util.Locale
+import java.util.Scanner
 
 fun main(args: Array<String>) = Main().main(args)
 
@@ -21,6 +28,18 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
     )
         .file(mustExist = true, canBeDir = true, canBeFile = false, canBeSymlink = false, mustBeReadable = true)
         .defaultLazy(defaultForHelp = "The current work directory") { File(System.getProperty("user.dir")) }
+        .validate {
+            val separator = when (File.separatorChar) {
+                '\\' -> "\\\\"
+                else -> File.separator!!
+            }
+            val path = it.absolutePath
+            val regex = ".*src${separator}[^$separator]+?${separator}(java|kotlin)${separator}?\$"
+                .toRegex(RegexOption.IGNORE_CASE)
+            require(path.matches(regex)) {
+                "The reference directory must be a Java or Kotlin sources root"
+            }
+        }
 
     private val searchDir by argument(help = "Directory to look for changes in", name = "searchDir")
         .file(mustExist = true, canBeDir = true, canBeFile = false, canBeSymlink = false, mustBeReadable = true)
@@ -49,11 +68,42 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
         logger.i("Files to check indexed.")
 
         logger.i("Running diff calculation...")
-        val classifiedFiles = calculateCodeDiff(sourceFiles, filesToSearchIn)
+        val rawDiff = calculateCodeDiff(sourceFiles, filesToSearchIn)
         logger.i("Diff calculation completed.")
         logger.i(
-            "Files changed: ${classifiedFiles.modified.size}, unchanged: ${classifiedFiles.unchanged.size}, " +
-                "added: ${classifiedFiles.added.size}, removed: ${classifiedFiles.removed.size}"
+            "Files changed: ${rawDiff.modified.size}, unchanged: ${rawDiff.unchanged.size}, " +
+                "added: ${rawDiff.added.size}, removed: ${rawDiff.removed.size}"
         )
+
+        logger.i("Filtering out added files...")
+        val diff = rawDiff.copy(added = excludeUnrelatedAdditions(rawDiff.added, sourceFiles))
+        logger.i("Filtering done.")
+
+        logger.i("")
+        Scanner(env.inputStream).use {
+            if (it.confirm("Do you want to copy over the MODIFIED files to the reference directory?", logger)) {
+                copyModifiedFiles(diff.modified)
+            }
+
+            if (it.confirm("Do you want to copy over the ADDED files to the reference directory?", logger)) {
+                copyFilesInPackageDir(referenceDir, diff.added)
+            }
+
+            if (it.confirm("Do you want to delete the REMOVED files in the reference directory?", logger)) {
+                deleteFiles(diff.removed, logger)
+            }
+        }
+    }
+
+    private fun Scanner.confirm(prompt: String?, logger: Logger): Boolean {
+        prompt?.let { logger.i(prompt) }
+        return when (nextLine().trim().toLowerCase(Locale.ROOT)) {
+            "y", "yes", "yep", "yup" -> true
+            "n", "no", "nope" -> true
+            else -> {
+                logger.e("Please respond with [y/n]")
+                confirm(prompt = null, logger = logger)
+            }
+        }
     }
 }

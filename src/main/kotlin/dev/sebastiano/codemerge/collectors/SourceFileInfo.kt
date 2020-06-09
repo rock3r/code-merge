@@ -10,6 +10,8 @@ data class SourceFileInfo(
     val sha1: ByteArray
 ) {
 
+    val packageName = fullyQualifiedName.substringBeforeLast('.')
+
     enum class SourceLanguage(val extension: String) {
         JAVA("java"),
         KOTLIN("kt");
