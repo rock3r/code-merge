@@ -27,6 +27,7 @@ application {
 }
 
 repositories {
+    google()
     mavenCentral()
     jcenter()
 }
@@ -35,9 +36,10 @@ val detektVersion = "1.9.1"
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("compiler-embeddable"))
+    implementation("androidx.annotation:annotation:1.1.0")
     implementation("com.github.ajalt:clikt:2.7.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.7")
     implementation("com.github.javaparser:javaparser-core:3.16.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.3.7")
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.6.2")
     testImplementation("com.willowtreeapps.assertk:assertk:0.22")
