@@ -7,8 +7,9 @@ import com.github.ajalt.clikt.parameters.options.defaultLazy
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.file
 import dev.sebastiano.codemerge.collectors.collectSourceFilesIn
-import java.io.File
+import dev.sebastiano.codemerge.diff.calculateCodeDiff
 import kotlinx.coroutines.runBlocking
+import java.io.File
 
 fun main(args: Array<String>) = Main().main(args)
 
@@ -37,12 +38,22 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
 
     override fun run() = runBlocking {
         super.run()
-        env.logger.i("Indexing source files in '${referenceDir.absolutePath}'...")
-        val sourceFiles = collectSourceFilesIn(referenceDir, excludePattern)
-        env.logger.i("Source files indexed.")
+        val logger = env.logger
 
-        env.logger.i("Indexing files to check for changes in '${searchDir.absolutePath}'...")
+        logger.i("Indexing source files in '${referenceDir.absolutePath}'...")
+        val sourceFiles = collectSourceFilesIn(referenceDir, excludePattern)
+        logger.i("Source files indexed.")
+
+        logger.i("Indexing files to check for changes in '${searchDir.absolutePath}'...")
         val filesToSearchIn = collectSourceFilesIn(searchDir, excludePattern)
-        env.logger.i("Files to check indexed.")
+        logger.i("Files to check indexed.")
+
+        logger.i("Running diff calculation...")
+        val classifiedFiles = calculateCodeDiff(sourceFiles, filesToSearchIn)
+        logger.i("Diff calculation completed.")
+        logger.i(
+            "Files changed: ${classifiedFiles.modified.size}, unchanged: ${classifiedFiles.unchanged.size}, " +
+                "added: ${classifiedFiles.added.size}, removed: ${classifiedFiles.removed.size}"
+        )
     }
 }
