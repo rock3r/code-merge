@@ -9,7 +9,7 @@ import com.github.ajalt.clikt.parameters.options.validate
 import com.github.ajalt.clikt.parameters.types.file
 import dev.sebastiano.codemerge.collectors.collectSourceFilesIn
 import dev.sebastiano.codemerge.diff.calculateCodeDiff
-import dev.sebastiano.codemerge.diff.excludeUnrelatedAdditions
+import dev.sebastiano.codemerge.diff.filterOnlyThoseFoundIn
 import dev.sebastiano.codemerge.io.copyFilesInPackageDir
 import dev.sebastiano.codemerge.io.copyModifiedFiles
 import dev.sebastiano.codemerge.io.deleteFiles
@@ -76,7 +76,7 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
         )
 
         logger.i("Filtering out added files...")
-        val diff = rawDiff.copy(added = excludeUnrelatedAdditions(rawDiff.added, sourceFiles))
+        val diff = rawDiff.copy(added = rawDiff.added.filterOnlyThoseFoundIn(sourceFiles))
         logger.i("Filtering done.")
 
         logger.i("")

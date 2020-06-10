@@ -3,9 +3,10 @@ package dev.sebastiano.codemerge.diff
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListUpdateCallback
 import dev.sebastiano.codemerge.collectors.SourceFileInfo
+import dev.sebastiano.codemerge.collectors.SourceFilesSet
 import java.lang.UnsupportedOperationException
 
-fun calculateCodeDiff(referenceFilesSet: Set<SourceFileInfo>, comparisonFilesSet: Set<SourceFileInfo>) : CodeDiffResults {
+fun calculateCodeDiff(referenceFilesSet: SourceFilesSet, comparisonFilesSet: SourceFilesSet) : CodeDiffResults {
     val modified = mutableSetOf<CodeDiffResults.ModifiedFileInfo>()
     val added = mutableSetOf<SourceFileInfo>()
     val removed = mutableSetOf<SourceFileInfo>()

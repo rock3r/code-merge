@@ -1,14 +1,11 @@
 package dev.sebastiano.codemerge.diff
 
 import dev.sebastiano.codemerge.collectors.SourceFileInfo
-import dev.sebastiano.codemerge.util.parallelMap
+import dev.sebastiano.codemerge.collectors.SourceFilesSet
 
-suspend fun excludeUnrelatedAdditions(addedFiles: Set<SourceFileInfo>, referenceFiles: Iterable<SourceFileInfo>): Set<SourceFileInfo> {
-    val sourcePackages = referenceFiles.toList()
-        .parallelMap { it.packageName }
-        .distinct()
-        .sorted()
+suspend fun Set<SourceFileInfo>.filterOnlyThoseFoundIn(referenceFiles: SourceFilesSet): Set<SourceFileInfo> {
+    val sourcePackages = referenceFiles.packages()
 
-    return addedFiles.filter { sourcePackages.contains(it.packageName) }
+    return filter { sourcePackages.contains(it.packageName) }
         .toSet()
 }

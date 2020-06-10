@@ -9,7 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 
-suspend fun CliCommand.collectSourceFilesIn(directory: File, excludeRegex: Regex?): Set<SourceFileInfo> = coroutineScope {
+suspend fun CliCommand.collectSourceFilesIn(directory: File, excludeRegex: Regex?): SourceFilesSet = coroutineScope {
     val allFiles = withContext(Dispatchers.IO) { directory.walkTopDown().filter { it.isFile }.toList() }
     val allFilesCount = allFiles.count()
     val logger = env.logger
@@ -55,7 +55,7 @@ suspend fun CliCommand.collectSourceFilesIn(directory: File, excludeRegex: Regex
         logger.w("${notExcludedCount - sourceFilesCount} file(s) could not be parsed as they may contain errors")
     }
 
-    return@coroutineScope parsedSourceFiles.toSet()
+    return@coroutineScope SourceFilesSet(parsedSourceFiles.toSet())
 }
 
 fun extractFqnFrom(fileContents: String, file: File, language: SourceFileInfo.SourceLanguage, logger: Logger): String? =
