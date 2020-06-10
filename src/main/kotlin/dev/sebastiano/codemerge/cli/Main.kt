@@ -17,6 +17,7 @@ import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.util.Locale
 import java.util.Scanner
+import java.util.concurrent.TimeUnit
 
 fun main(args: Array<String>) = Main().main(args)
 
@@ -60,15 +61,15 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
         val logger = env.logger
 
         logger.i("Indexing source files in '${referenceDir.absolutePath}'...")
-        val sourceFiles = collectSourceFilesIn(referenceDir, excludePattern)
+        val sourceFiles = benchmark(logger) { collectSourceFilesIn(referenceDir, excludePattern) }
         logger.i("Source files indexed.")
 
         logger.i("Indexing files to check for changes in '${searchDir.absolutePath}'...")
-        val filesToSearchIn = collectSourceFilesIn(searchDir, excludePattern)
+        val filesToSearchIn = benchmark(logger) { collectSourceFilesIn(searchDir, excludePattern) }
         logger.i("Files to check indexed.")
 
         logger.i("Running diff calculation...")
-        val rawDiff = calculateCodeDiff(sourceFiles, filesToSearchIn)
+        val rawDiff = benchmark(logger) { calculateCodeDiff(sourceFiles, filesToSearchIn) }
         logger.i("Diff calculation completed.")
         logger.i(
             "Files changed: ${rawDiff.modified.size}, unchanged: ${rawDiff.unchanged.size}, " +
@@ -76,7 +77,9 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
         )
 
         logger.i("Filtering out added files...")
-        val diff = rawDiff.copy(added = rawDiff.added.filterOnlyThoseFoundInSamePackagesAs(sourceFiles))
+        val diff = benchmark(logger) {
+            rawDiff.copy(added = rawDiff.added.filterOnlyThoseFoundInSamePackagesAs(sourceFiles))
+        }
         logger.i("Filtering done. Files added in existing packages: ${diff.added.size}")
 
         logger.i("")
@@ -93,6 +96,8 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
                 deleteFiles(diff.removed, logger)
             }
         }
+        logger.i("")
+        logger.i("All done, have a great day :)")
     }
 
     private fun Scanner.confirm(prompt: String?, logger: Logger): Boolean {
@@ -105,5 +110,24 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
                 confirm(prompt = null, logger = logger)
             }
         }
+    }
+
+    private inline fun <T> benchmark(logger: Logger, function: () -> T): T {
+        val startTimeNano = System.nanoTime()
+        val value = function()
+
+        val durationNano = System.nanoTime() - startTimeNano
+        logger.v("  Operation duration: ${formatTimeDuration(durationNano)}")
+
+        return value
+    }
+
+    private fun formatTimeDuration(durationNano: Long): String {
+        val hours = TimeUnit.NANOSECONDS.toHours(durationNano) % 24
+        val minutes = (TimeUnit.NANOSECONDS.toMinutes(durationNano) % 60).toString().padStart(2, '0')
+        val seconds = (TimeUnit.NANOSECONDS.toSeconds(durationNano) % 60).toString().padStart(2, '0')
+        val millis = (TimeUnit.NANOSECONDS.toMillis(durationNano) % 1000).toString().padStart(3, '0')
+
+        return "$hours:$minutes:$seconds.$millis"
     }
 }
