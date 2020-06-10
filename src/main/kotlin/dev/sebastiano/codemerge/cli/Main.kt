@@ -8,6 +8,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.validate
 import com.github.ajalt.clikt.parameters.types.file
 import dev.sebastiano.codemerge.collectors.collectSourceFilesIn
+import dev.sebastiano.codemerge.diff.CodeDiffResults
 import dev.sebastiano.codemerge.diff.calculateCodeDiff
 import dev.sebastiano.codemerge.diff.filterOnlyThoseFoundInSamePackagesAs
 import dev.sebastiano.codemerge.io.copyFilesInPackageDir
@@ -83,33 +84,9 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
         logger.i("Filtering done. Files added in existing packages: ${diff.added.size}")
 
         logger.i("")
-        Scanner(env.inputStream).use {
-            if (it.confirm("Do you want to copy over the MODIFIED files to the reference directory?", logger)) {
-                copyModifiedFiles(diff.modified)
-            }
-
-            if (it.confirm("Do you want to copy over the ADDED files to the reference directory?", logger)) {
-                copyFilesInPackageDir(referenceDir, diff.added)
-            }
-
-            if (it.confirm("Do you want to delete the REMOVED files in the reference directory?", logger)) {
-                deleteFiles(diff.removed, logger)
-            }
-        }
+        promptActionsOnDiff(diff, logger)
         logger.i("")
         logger.i("All done, have a great day :)")
-    }
-
-    private fun Scanner.confirm(prompt: String?, logger: Logger): Boolean {
-        prompt?.let { logger.i(prompt) }
-        return when (nextLine().trim().toLowerCase(Locale.ROOT)) {
-            "y", "yes", "yep", "yup" -> true
-            "n", "no", "nope" -> false
-            else -> {
-                logger.e("Please respond with [y/n]")
-                confirm(prompt = null, logger = logger)
-            }
-        }
     }
 
     private inline fun <T> benchmark(logger: Logger, function: () -> T): T {
@@ -129,5 +106,39 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
         val millis = (TimeUnit.NANOSECONDS.toMillis(durationNano) % 1000).toString().padStart(3, '0')
 
         return "$hours:$minutes:$seconds.$millis"
+    }
+
+    private fun promptActionsOnDiff(diff: CodeDiffResults, logger: Logger) {
+        Scanner(env.inputStream).use {
+            if (diff.modified.isNotEmpty()) {
+                if (it.confirm("Do you want to copy over the MODIFIED files to the reference directory?", logger)) {
+                    copyModifiedFiles(diff.modified)
+                }
+            }
+
+            if (diff.added.isNotEmpty()) {
+                if (it.confirm("Do you want to copy over the ADDED files to the reference directory?", logger)) {
+                    copyFilesInPackageDir(referenceDir, diff.added)
+                }
+            }
+
+            if (diff.removed.isNotEmpty()) {
+                if (it.confirm("Do you want to delete the REMOVED files in the reference directory?", logger)) {
+                    deleteFiles(diff.removed, logger)
+                }
+            }
+        }
+    }
+
+    private fun Scanner.confirm(prompt: String?, logger: Logger): Boolean {
+        prompt?.let { logger.i(prompt) }
+        return when (nextLine().trim().toLowerCase(Locale.ROOT)) {
+            "y", "yes", "yep", "yup" -> true
+            "n", "no", "nope" -> false
+            else -> {
+                logger.e("Please respond with [y/n]")
+                confirm(prompt = null, logger = logger)
+            }
+        }
     }
 }
