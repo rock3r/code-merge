@@ -13,8 +13,8 @@ abstract class CliCommand(help: String = "") : CliktCommand(help = help, printHe
     val env: RuntimeEnv
         get() = runtimeEnv
 
-    private val verbose by option(help = "Print verbose info")
-        .flag("-v", default = false)
+    private val verbose by option(names = *arrayOf("--verbose", "-v"), help = "Print verbose info")
+        .flag(default = false)
 
     init {
         context {
