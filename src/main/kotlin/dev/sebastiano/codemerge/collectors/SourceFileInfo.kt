@@ -12,21 +12,8 @@ data class SourceFileInfo(
 
     val packageName = fullyQualifiedName.substringBeforeLast('.')
 
-    enum class SourceLanguage(val extension: String) {
-        JAVA("java"),
-        KOTLIN("kt");
-
-        companion object {
-
-            fun detectLanguageFor(file: File): SourceLanguage? {
-                return when (file.extension.toLowerCase(Locale.ROOT)) {
-                    JAVA.extension -> JAVA
-                    KOTLIN.extension -> KOTLIN
-                    else -> null
-                }
-            }
-        }
-    }
+    fun isSameAs(other: SourceFileInfo): Boolean =
+        fullyQualifiedName == other.fullyQualifiedName && language == other.language
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -54,6 +41,22 @@ data class SourceFileInfo(
     private fun ByteArray.toHexString(): String = buildString {
         for (byte in this@toHexString) {
             append(String.format("%02x", byte))
+        }
+    }
+
+    enum class SourceLanguage(val extension: String) {
+        JAVA("java"),
+        KOTLIN("kt");
+
+        companion object {
+
+            fun detectLanguageFor(file: File): SourceLanguage? {
+                return when (file.extension.toLowerCase(Locale.ROOT)) {
+                    JAVA.extension -> JAVA
+                    KOTLIN.extension -> KOTLIN
+                    else -> null
+                }
+            }
         }
     }
 }

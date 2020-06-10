@@ -21,23 +21,36 @@ private suspend fun calculateCoarseDiff(
     oldFiles: SourceFilesSet,
     newFiles: Set<SourceFileInfo>
 ): RawFilesDiff {
-    val commonFiles = newFiles intersectByFqn oldFiles
-    val added = newFiles subtract commonFiles
-    val removed = oldFiles subtract commonFiles
+    val commonFiles = newFiles intersectAsSourceFiles oldFiles
+    val added = newFiles subtractAsSourceFiles commonFiles
+    val removed = oldFiles subtractAsSourceFiles commonFiles
 
     val common = commonFiles.parallelMap { new ->
-        CodeDiffResults.OldAndNewFileInfo(oldFiles.first { it.packageName == new.packageName }, new)
+        val old = oldFiles.first { old -> old.isSameAs(new) }
+        CodeDiffResults.OldAndNewFileInfo(old, new)
     }.toSet()
 
     return RawFilesDiff(common, added, removed)
 }
 
-private infix fun Set<SourceFileInfo>.intersectByFqn(other: Set<SourceFileInfo>): Set<SourceFileInfo> {
+private infix fun Set<SourceFileInfo>.intersectAsSourceFiles(other: Set<SourceFileInfo>): Set<SourceFileInfo> {
     val set = this.toMutableSet()
     val iterator = set.iterator()
     while (iterator.hasNext()) {
         val item = iterator.next()
-        if (other.none { item.fullyQualifiedName == it.fullyQualifiedName }) {
+        if (other.none { it.isSameAs(item) }) {
+            iterator.remove()
+        }
+    }
+    return set
+}
+
+private infix fun Set<SourceFileInfo>.subtractAsSourceFiles(other: Set<SourceFileInfo>): Set<SourceFileInfo> {
+    val set = this.toMutableSet()
+    val iterator = set.iterator()
+    while (iterator.hasNext()) {
+        val item = iterator.next()
+        if (other.any { it.isSameAs(item) }) {
             iterator.remove()
         }
     }
