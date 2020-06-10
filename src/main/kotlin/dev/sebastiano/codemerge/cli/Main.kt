@@ -13,11 +13,11 @@ import dev.sebastiano.codemerge.diff.filterOnlyThoseFoundInSamePackagesAs
 import dev.sebastiano.codemerge.io.copyFilesInPackageDir
 import dev.sebastiano.codemerge.io.copyModifiedFiles
 import dev.sebastiano.codemerge.io.deleteFiles
-import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.util.Locale
 import java.util.Scanner
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.runBlocking
 
 fun main(args: Array<String>) = Main().main(args)
 
@@ -35,7 +35,7 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
                 else -> File.separator!!
             }
             val path = it.absolutePath
-            val regex = ".*src${separator}[^$separator]+?${separator}(java|kotlin)${separator}?\$"
+            val regex = ".*src$separator[^$separator]+?$separator(java|kotlin)$separator?\$"
                 .toRegex(RegexOption.IGNORE_CASE)
             require(path.matches(regex)) {
                 "The reference directory must be a Java or Kotlin sources root"

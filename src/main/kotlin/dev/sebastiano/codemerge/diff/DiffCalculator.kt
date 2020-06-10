@@ -4,7 +4,7 @@ import dev.sebastiano.codemerge.collectors.SourceFileInfo
 import dev.sebastiano.codemerge.collectors.SourceFilesSet
 import dev.sebastiano.codemerge.util.parallelMap
 
-suspend fun calculateCodeDiff(referenceFilesSet: SourceFilesSet, comparisonFilesSet: SourceFilesSet) : CodeDiffResults {
+suspend fun calculateCodeDiff(referenceFilesSet: SourceFilesSet, comparisonFilesSet: SourceFilesSet): CodeDiffResults {
     val rawDiff = calculateCoarseDiff(oldFiles = referenceFilesSet, newFiles = comparisonFilesSet)
     val potentiallyChanged = rawDiff.common
     val modified = potentiallyChanged.filterNot { it.old.sha1.contentEquals(it.new.sha1) }
@@ -62,4 +62,3 @@ private data class RawFilesDiff(
     val added: Set<SourceFileInfo>,
     val removed: Set<SourceFileInfo>
 )
-
