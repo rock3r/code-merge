@@ -77,7 +77,7 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
 
         logger.i("Filtering out added files...")
         val diff = rawDiff.copy(added = rawDiff.added.filterOnlyThoseFoundInSamePackagesAs(sourceFiles))
-        logger.i("Filtering done.")
+        logger.i("Filtering done. Files added in existing packages: ${diff.added.size}")
 
         logger.i("")
         Scanner(env.inputStream).use {
