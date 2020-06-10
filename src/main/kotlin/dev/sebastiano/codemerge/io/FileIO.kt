@@ -5,7 +5,7 @@ import dev.sebastiano.codemerge.collectors.SourceFileInfo
 import dev.sebastiano.codemerge.diff.CodeDiffResults
 import java.io.File
 
-fun copyModifiedFiles(modifiedFiles: Set<CodeDiffResults.ModifiedFileInfo>) {
+fun copyModifiedFiles(modifiedFiles: Set<CodeDiffResults.OldAndNewFileInfo>) {
     for ((reference, modified) in modifiedFiles) {
         modified.file.copyTo(reference.file, overwrite = true)
     }

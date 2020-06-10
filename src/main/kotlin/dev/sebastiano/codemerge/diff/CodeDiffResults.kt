@@ -4,10 +4,10 @@ import dev.sebastiano.codemerge.collectors.SourceFileInfo
 
 data class CodeDiffResults(
     val unchanged: Set<SourceFileInfo>,
-    val modified: Set<ModifiedFileInfo>,
+    val modified: Set<OldAndNewFileInfo>,
     val added: Set<SourceFileInfo>,
     val removed: Set<SourceFileInfo>
 ) {
 
-    data class ModifiedFileInfo(val old: SourceFileInfo, val new: SourceFileInfo)
+    data class OldAndNewFileInfo(val old: SourceFileInfo, val new: SourceFileInfo)
 }

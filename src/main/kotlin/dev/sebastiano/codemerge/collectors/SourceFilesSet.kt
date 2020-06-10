@@ -14,4 +14,14 @@ data class SourceFilesSet(val files: Set<SourceFileInfo>) : Set<SourceFileInfo> 
         }
         return packagesCache
     }
+
+    private lateinit var fqnCache: List<String>
+
+    suspend fun fullyQualifiedNames(): List<String> {
+        if (!this::fqnCache.isInitialized) {
+            fqnCache = files.parallelMap { it.fullyQualifiedName }
+                .sorted()
+        }
+        return fqnCache
+    }
 }
