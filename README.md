@@ -8,3 +8,6 @@ files that have changed, that have been added, and removed, aiding the job for e
 
 The tool is not doing any diffing itself, but rather checking file checksums to determine changes. The tool only
 supports Java and Kotlin source files (`.java`, `.kt`).
+
+Note: this tool is not aiming at performance, it's rather brute-force-y at the moment. If you want to improve its
+processing speed, feel free to open a PR.
