@@ -99,7 +99,7 @@ class Main : CliCommand(help = "Compare sources from a reference directory with 
         prompt?.let { logger.i(prompt) }
         return when (nextLine().trim().toLowerCase(Locale.ROOT)) {
             "y", "yes", "yep", "yup" -> true
-            "n", "no", "nope" -> true
+            "n", "no", "nope" -> false
             else -> {
                 logger.e("Please respond with [y/n]")
                 confirm(prompt = null, logger = logger)
